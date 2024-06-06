@@ -1,3 +1,5 @@
+
+
 ## Machine Learning Online Class - Exercise 3: Logistic Regression
 import pandas as pd
 import numpy as np
@@ -25,12 +27,11 @@ def plotDecisionBoundary(data, ejehorizontal, ejevertical):
     plt.legend()  # Para que me pinte los label de cada scatter
     plt.show()
 def sigmoid(z):
-    g = 1 / (1+np.exp(-z))
-    return g
+    return (1/(1+np.exp(-z)))
 def costFunction(theta, X, y):
     m = len(y)
     h = sigmoid(np.dot(X, theta))
-    J = -(1 / m) * np.sum((y * np.log(h)) + ((1 - y) * np.log(1 - h)))
+    J = -(1 / m) * np.sum((y * np.log(h)) + ((1 - y) * np.log(1 - h)), axis=0)
     return J
 
 
@@ -50,7 +51,15 @@ def predict(theta, X):
     # Calcular la hipótesis h = g(X*theta)
     h = sigmoid(np.dot(X, theta))
     return h
-
+def gradientDescent(X, y, theta, alpha, num_iters):
+    m = len(y)
+    for i in range(num_iters):
+        grad = gradientFunction(theta, X, y)
+        theta = theta - alpha * grad
+        if i % 100 == 0:  # print cost every 100 iterations
+            cost = costFunction(theta, X, y)
+            print(f"Iteration {i}: Cost {cost}")
+    return theta
 
 # OPCION 2
 def holdout(X, y, percentage=0.6):
@@ -81,17 +90,18 @@ def normalize(X):
     return X_norm, mu, sigma
 
 
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     ## ==================== EJ1: Cargar datos y visualizar ====================
     file = pd.read_csv("ex2data1.txt", names=["score_1", "score_2", "label"])
 
-    x = file[["score_1", "score_2"]]
-    y = file['label']
+    x = pd.DataFrame({'score_1':file["score_1"],'score_2':file["score_2"]})
+    y = pd.DataFrame({'label':file['label']})
     plotData(file)
     x.insert(0,'ones', 1)
     num_atributos = x.shape[1]  # Si esta operación la hacemos antes de añadir la columna de 1 a X, debemos poner X.shape[1]+1
-    initial_theta =  np.zeros((X.columns.size,1))
+    initial_theta =  np.zeros((x.columns.size, 1))
 
 
     ## ==================== EJ3: Coste y descenso del gradiente con theta inicializados a 0 ====================
@@ -109,11 +119,21 @@ if __name__ == '__main__':
     print("El coste usando el optimizador avanzado CG debe ser aproximadamente 0.203: ", theta_opt[1])
     print("Los theta optimos usando el optimizador avanzado CG deben ser aproximadamente: [-25.175949 0.206348 0.20158]: ", theta_opt)#, theta_opt)
 
+    # Parámetros de descenso por gradiente
+    alpha = 0.01
+    num_iters = 200
+
+    # Ejecutar descenso por gradiente
+    theta = gradientDescent(x.to_numpy(), y.to_numpy().flatten(), initial_theta, alpha, num_iters)
+
+   
+
     # Frontera de decisión
     # Implementar teniendo en cuenta que nuestros datos son separables linealmente:
     # h = theta0+theta1x1+theta2x2 = 0 --> x2 = - (theta0+theta1x1)/theta2
     #   ejehorizontal = [min(X['score_1']), max(X['score_2'])]
     #   ejevertical = - (theta[0] + np.dot( ejehorizontal, theta[1])) / theta[2]
+    '''
     plotDecisionBoundary(theta_opt, x, y)
 
     ## ==================== EJ5: Predecir candidato admitido o no  ====================
@@ -144,3 +164,4 @@ if __name__ == '__main__':
     ## ==================== EJ6: Predecir conjunto de entrenamiento X y mostrar exactitud  ====================
     predictions = 0 # Llamar función predict con X completo
     exactitud = 0  # np.mean(predictions == y.to_numpy().flatten())
+'''
