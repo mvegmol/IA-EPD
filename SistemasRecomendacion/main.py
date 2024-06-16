@@ -4,6 +4,26 @@ import scipy.io as sio
 import numpy as np
 import scipy.optimize as opt
 
+def rankingPeliculas(y,r,n,movie_idx):
+    movies= Y.shape[0]
+    yval1 = np.zeros((movies,1))
+    ymean = np.zeros((movies,1 ))
+    for i in range(movies):
+        idx = np.where(R[i,:] == 1)[0]
+        yval1[i] = len(idx)
+        ymean[i]  = y[i,idx].mean()
+
+    idxVal = np.argsort(yval1, axis=0)[::-1]
+    idxYMean = np.argsort(ymean, axis=0 )[::-1]
+    print("Primeras {0} películas mejor valoradas (con nº de vistas): ".format(n))
+    for i in range(n):
+        print('\t{0} Nº {1} con {2} puntos, valorada {3} veces ({4}).'.format(i,
+                                                                              int(idxYmean[i]),
+                                                                              float(Ymean[int(idxYmean[i])]),
+                                                                              int(Yval[int(idxYmean[i])]),
+                                                                              movie_idx[int(idxYmean[i])]))
+
+
 
 def cofiCostFuncSinReg(params, Y, R, atributos):
     peliculas = Y.shape[0]
@@ -51,17 +71,67 @@ def cofiCostFuncReg(params, Y, R, atributos, lambda_param):
 
     hipotesis = np.dot(x,theta) -Y
     coste_parte1 = np.sum(np.power(np.multiply(hipotesis,R),2))
-
     coste_parte2 = lambda_param * np.sum(np.power(theta,2))
     coste_parte3 = lambda_param* np.sum(np.power(x,2))
-
     coste_final = (1/2)*(coste_parte1+coste_parte2+coste_parte3)
 
     return coste_final
 
+def cobaCostFuncReg(params, x, y, r, lambda_param):
+    peliculas = y.shape[0]
+    usuarios = y.shape[1]
+    atributos = x.shape[1]
+    theta = np.reshape(params[peliculas * atributos:], newshape=(atributos, usuarios), order="F")
+    j=0
+    rror = np.multiply(np.dot(x, theta) - y, r)
+    error_2 = np.power(error, 2)
+    j = j +((lambda_param / 2) * np.sum(np.power(theta,2)))
+    return j
+def cobaGradientFuncSinReg(params, x, y, r, lambda_param):
+    peliculas = y.shape[0]
+    usuarios = y.shape[1]
+    atributos = x.shape[1]
+    theta = np.reshape(params[peliculas*atributos:],newshape=(atributos,usuarios),order="F")
+    j =0
+    error = np.multiply(np.dot(x,theta)-y, r)
+    error_2 = np.power(error,2)
+    j = (1 / 2 ) * np.sum(error_2)
+    j = j + ((lambda_param/2) *np.sum(np.power(theta,2)))
+    return j
+
+def recomendacionUsuario(x,theta,r,usuario,num,movie_idx):
+    predictions = np.dot(X,theta)
+    movies = r.shape[0]
+    res_user = np.zeros((movies,1))
+    for i in range(movies):
+        res_user[i,0] = np.where(r[i,usuario] ==0, predictions[i,usuario], 0)
+    idx = np.argsort(res_user, axis=0)[::-1]
+    print(f'Las mejores {num} recomendaciones para el usuario {usuario}')
+    for i in range(num):
+        j = int(idx[i])
+        print(f'\tTasa de predicción {str(float(res_user[j]))} para la película {movie_idx[j]}')
+
+
+def similares(i, num, x):
+    buscar = x[i]
+    x = np.delete(x,i,axis=0)
+    norma = np.linalg.norm(x-buscar, axis=1)
+    idx = np.argsort(norma, axis=0)
+    res = idx[:num]
+    return res
+
+
+def agruparPeliculas( x,k , max_iters):
+    random_initial_centroides = KMeansInitCentroids(x,k)
+    centroids, idx = runKMeans( x, random_initial_centroides, max_iters,  plot=False)
+    print(f'centroides compueted after {max_iters} iterations of K-means with random initial centroids:\n {centroids}')
+    return idx
+
+
 def cofiGradientFuncReg(params, Y, R, atributos, lambda_param):
     peliculas = Y.shape[0]
     usuarios = Y.shape[1]
+
     #desenrollamos x y theta
     x = np.reshape(params[0:peliculas*atributos],newshape=(peliculas,atributos),order="F")
     theta = np.reshape(params[peliculas*atributos:],newshape=(atributos,usuarios),order="F")
@@ -73,6 +143,7 @@ def cofiGradientFuncReg(params, Y, R, atributos, lambda_param):
     x_gradiente = np.dot(gradi_1parte,theta.T)+(lambda_param*x)
     #enrollamos el gradiente final de x y theta
     gradiente_final = np.hstack((np.ravel(x_gradiente,order="F"),np.ravel(theta_gradiente,order="F")))
+
 
     return gradiente_final
 
@@ -229,3 +300,58 @@ if __name__ == '__main__':
         j = int(idx[i])
         print('Predicted rating of {0} for movie {1}.'.format(str(float(res_user[j])), movie_idx[j]))
         print('Predicted mejor rating of {0} for movie {1}.'.format(str(float(res_user_mejor[j])), movie_idx[j]))
+
+    print(f"Profesor examen \n\n")
+    movies = Y.shape[0]  # 1682
+    users = Y.shape[1]  # 944
+    features = 10
+    lambda_param = 1.5
+    maxiter = 200
+    Theta_op = np.random.rand(features + 1, users) * (2 * 0.12)
+    params = np.ravel(Theta_op, order='F')
+    X_op = np.insert(X, 0, 1, axis=1)
+    fmin_1 = opt.fmin_cg(maxiter=maxiter, f=cobaCostFuncReg, x0=params,
+                         fprime=cobaGradientFuncSinReg, args=(X_op, Y, R, lambda_param))
+    Theta_fmin = np.reshape(fmin_1, (features + 1, users), 'F')
+    print("Gradiente con optimización y con regularización: \n", Theta_fmin)
+
+
+    '''
+Las funciones checkNNGradientsSinReg y computeNumericalGradientSinReg
+suministradas con el material, correspondientes a la EPD06 – Sistemas de Recomendación, están preparadas para probar
+un sistema de Filtrado Colaborativo. Adaptarlas para poder probar el ejercicio 2.
+    computeNumericalGradientCobaReg à solo cambiar nombre de la función de coste
+NGradientsCobaSinReg(lambda_param): # pequeñas modificaciones
+#Create small problem
+ni = 5
+nu = 4
+nf = 3
+X_t = np.insert(np.random.rand(ni, nf), 0, 1, axis=1)
+Theta_t = np.random.rand(nf+1, nu)
+#Zap out most entries
+Y = X_t @ Theta_t
+dim = Y.shape
+aux = np.random.rand(*dim)
+Y[aux > 0.5] = 0
+R = np.zeros((Y.shape))
+R[Y != 0] = 1
+#Run Gradient Checking
+dim_X_t = X_t.shape
+dim_Theta_t = Theta_t.shape
+X = np.random.randn(*dim_X_t)
+X[:, 0] = 1
+Theta = np.random.randn(*dim_Theta_t)
+params = np.ravel(Theta,order='F')
+# Calculo gradiente mediante aproximación numérica
+mygrad = computeNumericalGradientCobaReg(X, Theta, Y, R)
+#Calculo gradiente
+grad = cobaGradientFuncReg(params, X, Y, R, lambda_param)
+# Visually examine the two gradient computations. The two columns
+# you get should be very similar.
+df = pd.DataFrame(mygrad,grad)
+print(df)
+diff = np.linalg.norm((mygrad-grad))/np.linalg.norm((mygrad+grad))
+print('If your gradient implementation is correct, then the differences will be small
+(less than 1e-9):' , diff)
+    
+    '''

@@ -1,3 +1,4 @@
+
 import matplotlib.pyplot as plt
 
 def plotClusters(X,clusters,centroids,ini_centroids):
