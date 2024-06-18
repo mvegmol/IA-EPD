@@ -62,24 +62,26 @@ def gradientDescent(X, y, theta, alpha, num_iters):
     return theta
 
 # OPCION 2
-def holdout(X, y, percentage=0.6):
-    X_training = X.sample(round(percentage * len(X)))  # Selecciona aleatoriamente el numero de filas indicado
-    y_training = y.iloc[X_training.index]  # Selecciona las filas del X_training
-    X_test = X.iloc[~X.index.isin(X_training.index)]  # ~ significa NOT
-    y_test = y.iloc[~X.index.isin(X_training.index)]  # ~ significa NOT
+def holdout(x, y, percentage=0.6):
+    # Seleccionamos el numero de filas
+    x_training = x.sample(round(porcentage * len(x)))
+    # Seleccionamos en y las misma filas que en x
+    y_training = y.iloc[x_training.index]
+    # En el test de x e y introducideremos las filas que no se encuentran en el training
+    x_test = x.drop(x_training.index)
+    y_test = y.drop(y_training.index)
+    # print("El tamaño del training debe ser: ", round(percentage * len(x)), " - Comprobación: tamaño X_training es ",
+    #      len(x_training), " y tamaño y_training es", len(y_training))
+    # print("El tamaño del test debe ser: ", len(x) - round(percentage * len(x)), " - Comprobación: tamaño X_test es ",
+    #      len(x_test), " y tamaño y_test es", len(y_test))
+    # Reseteamos los indices de todos los conjuntos
 
-    print("El tamaño del training debe ser: ", round(percentage * len(X)), " - Comprobación: tamaño X_training es ",
-          len(X_training), " y tamaño y_training es", len(y_training))
-    print("El tamaño del test debe ser: ", len(X) - round(percentage * len(X)), " - Comprobación: tamaño X_test es ",
-          len(X_test), " y tamaño y_test es", len(y_test))
-
-    # Reseteamos los índices de todos los conjuntos
-    X_training = X_training.reset_index(drop=True)
+    x_training = x_training.reset_index(drop=True)
     y_training = y_training.reset_index(drop=True)
-    X_test = X_test.reset_index(drop=True)
+    x_test = x_test.reset_index(drop=True)
     y_test = y_test.reset_index(drop=True)
 
-    return X_training, y_training, X_test, y_test
+    return x_training, y_training, x_test, y_test
 
 def normalize(X):
 
