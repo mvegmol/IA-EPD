@@ -83,7 +83,7 @@ def holdout(x, y, percentage=0.6):
 
     return x_training, y_training, x_test, y_test
 
-def normalize(X):
+def normalize_estandarizacion(X):
 
     mu = np.mean(X, axis=0)
     sigma = np.std(X, axis=0)
